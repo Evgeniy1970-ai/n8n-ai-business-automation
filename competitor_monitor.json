@@ -1,0 +1,321 @@
+{
+  "name": "Scrapping Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://kruszywosa.pl/oferta/cennik/",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        0
+      ],
+      "id": "bf3cb7f6-b9f4-4e10-b419-a76b78461b1f",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "raw_text",
+              "cssSelector": "body"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "8b955226-11cf-45ff-b57c-0f5ac5dc7505",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Перед тобой текст со страницы цен конкурента. Твоя задача — найти все виды щебня (kruszywo) и песка (piasek) и их цены за тонну (zł / tona).\nВыдай результат в формате JSON:\n{ \"products\": [ { \"name\": \"название\", \"price\": \"цена\" } ] }\nЕсли цена указана как 'Skontaktuj się', так и пиши.\n{{ $json.raw_text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        704,
+        0
+      ],
+      "id": "cd8b7904-e908-495f-a0dc-04b4e72d81e6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        224
+      ],
+      "id": "1a449d89-656e-4a41-81fb-e75d306529a1",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YBAqUsv0HgqPgKKP",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "72d291c2-a113-41d3-91f7-db2948fb915a",
+              "name": "products",
+              "value": "={{ JSON.parse($json.output.replace(/```json|```/g, \"\").trim()).products }}",
+              "type": "array"
+            },
+            {
+              "id": "d5635390-36ed-40d0-a735-0b8750e24e19",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "f572c91a-6bbc-4549-acf1-4c043b442acb",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "products",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "bbc00355-a2bb-4858-bb8d-70ab16aba7ad",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appkwzXP1BqQVMk1A",
+          "mode": "list",
+          "cachedResultName": "Competitor's Prices",
+          "cachedResultUrl": "https://airtable.com/appkwzXP1BqQVMk1A"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblqWaHu2rDra3zht",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appkwzXP1BqQVMk1A/tblqWaHu2rDra3zht"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Цена": "={{ $json.price }}",
+            "Товар": "={{ $json.name }}",
+            "Дата проверки": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Товар",
+              "displayName": "Товар",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Цена",
+              "displayName": "Цена",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Дата проверки",
+              "displayName": "Дата проверки",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1504,
+        0
+      ],
+      "id": "eff7ed95-d7ab-42ba-96d6-8703ea3380d2",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "DEDvFYYsNWAarCxr",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        0
+      ],
+      "id": "c40ecf82-7fa4-4dba-b285-6f3e549f3167",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "af9748f5-4c57-410c-baa0-bf4eb3926cfb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b8dc6b20db443e18892a3a7897076c0d1944dd1743dde315e88e0ce0d3ed7ca6"
+  },
+  "id": "U3_guo0pSgcNyyZlHxqq5",
+  "tags": []
+}

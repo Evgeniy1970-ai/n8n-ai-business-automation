@@ -1,0 +1,324 @@
+{
+  "name": "My Email Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Твоя задача — проанализировать ТЕЛО письма, игнорируя служебную информацию.\n\nОСОБОЕ ПРАВИЛО:\n- Игнорируй поле \"Delivered-To\" и \"To\" — это адрес получателя.\n- Отправитель — это тот, кто указан в поле \"From\" или в подписи письма.\n- Если в тексте много служебных заголовков, начни анализ с первого приветствия (например, \"Привет\", \"Здравствуйте\") или осмысленного предложения.\n\nТекст письма:\n{{ $json.text }}\n\nВЫДАЙ РЕЗУЛЬТАТ В ФОРМАТЕ JSON:\n{\n  \"summary\": \"суть одним предложением\",\n  \"importance\": \"Высокая/Средняя/Низкая\",\n  \"dates\": \"даты или 'не указаны'\",\n  \"advice\": \"конкретный совет\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "df9bde26-f5af-4194-916d-a2c485162f2f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        224
+      ],
+      "id": "a3e33b24-324d-45e0-b3ca-9664d27c26ac",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YBAqUsv0HgqPgKKP",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "391064585",
+        "text": "=📩 *НОВОЕ ПИСЬМО*\n\n📝 **Суть:** {{ JSON.parse($node[\"Edit Fields\"].json.parsed_data).summary }}\n⚠️ **Важность:** {{ JSON.parse($node[\"Edit Fields\"].json.parsed_data).importance }}\n💡 **Совет:** {{ JSON.parse($node[\"Edit Fields\"].json.parsed_data).advice }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "abc4bcb3-45ad-4e4a-a5ae-cbfc29ebc415",
+      "name": "Send a text message",
+      "webhookId": "be69dfda-154f-46b1-bdfb-2dc17cb3fdfa",
+      "credentials": {
+        "telegramApi": {
+          "id": "myq7YyAytHXSHbPB",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "postProcessAction": "nothing",
+        "format": "resolved",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ebb4aa3d-e06d-4781-9fa9-94446f2632d8",
+      "name": "Email Trigger (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "L2XnObQZnVFp08Aa",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.from }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        224
+      ],
+      "id": "34948c46-1433-4a48-8ff0-3cb583cff722",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appLvfiLeJ84z7quE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "=tblOrmX0XFu1ZZfxF",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sender": "={{ $('Email Trigger (IMAP)').item.json.from.value[0].address }}",
+            "Date": "={{ $('Email Trigger (IMAP)').item.json.date }}",
+            "AI Advise": "={{ JSON.parse($json.parsed_data).advice }}",
+            "Core info": "={{ JSON.parse($json.parsed_data).summary }}",
+            "Importance": "={{ JSON.parse($json.parsed_data).importance }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Sender",
+              "displayName": "Sender",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Core info",
+              "displayName": "Core info",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Importance",
+              "displayName": "Importance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "High",
+                  "value": "High"
+                },
+                {
+                  "name": "Medium",
+                  "value": "Medium"
+                },
+                {
+                  "name": "Low",
+                  "value": "Low"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Advise",
+              "displayName": "AI Advise",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        752,
+        0
+      ],
+      "id": "60722fb6-391d-4755-b3b5-62ceeedd8101",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "DEDvFYYsNWAarCxr",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "71e133ee-65a0-49bb-bbad-e8ee1ea1ba22",
+              "name": "parsed_data",
+              "value": "={{ JSON.parse($json.output.replace(/```json|```/g, \"\").trim()) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        528,
+        0
+      ],
+      "id": "561f6724-faeb-46f1-b581-1198ec7ff018",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4641bb86-ee9e-4d4c-9e43-b6eb04509210",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b8dc6b20db443e18892a3a7897076c0d1944dd1743dde315e88e0ce0d3ed7ca6"
+  },
+  "id": "Xs8uiCCot4nsFKPQlKVr8",
+  "tags": []
+}
