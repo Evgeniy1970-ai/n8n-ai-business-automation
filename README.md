@@ -25,3 +25,14 @@ This repository contains ready-to-use **AI-driven automation workflows** designe
 ---
 *Developed to transform manual data entry into intelligent business assets.*
 
+---
+
+## 👤 Author
+
+Built by **Yevhenii Nohin**, founder of [NeolithAI Agency](https://neolithai.agency).
+
+- 🌐 Website: [neolithai.agency](https://neolithai.agency)
+- 💼 LinkedIn: [Yevhenii Nohin](https://www.linkedin.com/in/yevhenii-n-06b403347/)
+- 🛠️ Upwork: [NeolithAI — AI Automation](https://www.upwork.com/freelancers/~013cd102dcb30a209f)
+- 🔧 n8n: [Creator profile & templates](https://n8n.io/creators/neolith2018/)
+
